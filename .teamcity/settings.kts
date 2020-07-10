@@ -29,46 +29,20 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 'Debug' option is available in the context menu for the task.
 */
 
-version = "2019.2"
+version = "2020.1"
 
 val projects = listOf("dogfood", "jrtest", "schutest")
 //val environments = listOf("qa", "sandbox", "production")
 
 project {
     for (project in projects) {
-        subProject(CustomProject(project, environments))
+        subProject(CustomProject(project))
     }
-}
-
-//project {
-//    vcsRoot(PetclinicVcs)
-//    buildType(wrapWithFeature(Build){
-//        swabra {}
-//    })
-//
-//    subProject(TestProject)
-//}
-
-class CustomProject(val project: String, val environments: List<String>) : Project({
-    name = project;
-
-    for (environment in environments) {
-        buildType(wrapWithFeature(BuildSpire(environment)){
-            swabra {}
-        })
-    }
-})
-
-fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit): BuildType {
-    buildType.features {
-        featureBlock()
-    }
-    return buildType
 }
 
 //object Build : BuildType({
-class BuildSpire(val environment: String) : BuildType({
-    id("Build_Spire_${environment}".toExtId())
+class BuildSpire(val project: String, val environment: String) : BuildType({
+    id("Extensions_${project}_Build_Spire_${environment}".toExtId())
     name = "Build Spire ($environment)"
 
     vcs {
@@ -79,12 +53,30 @@ class BuildSpire(val environment: String) : BuildType({
         maven {
             goals = "clean package"
             mavenVersion = defaultProvidedVersion()
-            jdkHome = "%env.${jdk}%"
+            jdkHome = "%env.${environment}%"
         }
     }
 
     requirements {
-        equals("teamcity.agent.jvm.os.name", os)
+        equals("teamcity.agent.jvm.os.name", "test")
+    }
+})
+
+
+fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit): BuildType {
+    buildType.features {
+        featureBlock()
+    }
+    return buildType
+}
+
+class CustomProject(val project: String) : Project({
+    id("Extensions_${project}".toExtId())
+    name = "${project} Extensions"
+
+    val environments = listOf("qa", "sandbox", "production")
+    for (environment in environments) {
+        buildType(BuildSpire(project, environment))
     }
 })
 
