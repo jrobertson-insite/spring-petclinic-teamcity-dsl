@@ -30,14 +30,27 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 
 version = "2018.2"
 
-project {
-    vcsRoot(PetclinicVcs)
-    buildType(wrapWithFeature(Build){
-        swabra {}
-    })
+val operatingSystems = listOf("Mac OS X", "Windows", "Linux")
+val jdkVersions = listOf("JDK_18", "JDK_11")
 
-    subProject(TestProject)
+project {
+    for (os in operatingSystems) {
+        for (jdk in jdkVersions) {
+            buildType(wrapWithFeature(Build(os, jdk)){
+                swabra {}
+            })
+        }
+    }
 }
+
+//project {
+//    vcsRoot(PetclinicVcs)
+//    buildType(wrapWithFeature(Build){
+//        swabra {}
+//    })
+//
+//    subProject(TestProject)
+//}
 
 object TestProject : Project({
     name = "TestSubProject"
@@ -50,23 +63,25 @@ fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit
     return buildType
 }
 
-object Build : BuildType({
-    name = "Build"
-    artifactRules = "target/*jar"
+//object Build : BuildType({
+class Build(val os: String, val jdk: String) : BuildType({
+    id("Build_${os}_${jdk}".toExtId())
+    name = "Build ($os, $jdk)"
 
     vcs {
-        root(PetclinicVcs)
+        root(DslContext.settingsRoot)
     }
+
     steps {
         maven {
             goals = "clean package"
-            dockerImage = "maven:3.6.0-jdk-8"
+            mavenVersion = defaultProvidedVersion()
+            jdkHome = "%env.${jdk}%"
         }
     }
-    triggers {
-        vcs {
-            groupCheckinsByCommitter = true
-        }
+
+    requirements {
+        equals("teamcity.agent.jvm.os.name", os)
     }
 })
 
