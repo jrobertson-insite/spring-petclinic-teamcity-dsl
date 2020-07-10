@@ -1,9 +1,10 @@
-import jetbrains.buildServer.configs.kotlin.v2018_2.*
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.Swabra
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.swabra
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildSteps.maven
-import jetbrains.buildServer.configs.kotlin.v2018_2.triggers.vcs
-import jetbrains.buildServer.configs.kotlin.v2018_2.vcs.GitVcsRoot
+import jetbrains.buildServer.configs.kotlin.v2019_2.*
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildFeatures.Swabra
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildFeatures.swabra
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.maven
+import jetbrains.buildServer.configs.kotlin.v2019_2.triggers.vcs
+import jetbrains.buildServer.configs.kotlin.v2019_2.vcs.GitVcsRoot
+import jetbrains.buildServer.configs.kotlin.v2019_2.project
 
 /*
 The settings script is an entry point for defining a TeamCity
@@ -31,7 +32,22 @@ version = "2018.2"
 
 project {
     vcsRoot(PetclinicVcs)
-    buildType(Build)
+    buildType(wrapWithFeature(Build){
+        swabra {}
+    })
+
+    subProject(TestProject)
+}
+
+object TestProject : Project({
+    name = "TestSubProject"
+})
+
+fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit): BuildType {
+    buildType.features {
+        featureBlock()
+    }
+    return buildType
 }
 
 object Build : BuildType({
@@ -56,13 +72,5 @@ object Build : BuildType({
 
 object PetclinicVcs : GitVcsRoot({
     name = "PetclinicVcs"
-    url = "https://github.com/spring-projects/spring-petclinic.git"
+    url = "https://github.com/jrobertson-insite/spring-petclinic.git"
 })
-
-
-fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit): BuildType {
-    buildType.features {
-        featureBlock()
-    }
-    return buildType
-}
