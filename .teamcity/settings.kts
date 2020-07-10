@@ -1,3 +1,4 @@
+import jetbrains.buildServer.configs.kotlin.v10.toExtId
 import jetbrains.buildServer.configs.kotlin.v2018_2.*
 import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.Swabra
 import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.swabra
@@ -65,8 +66,7 @@ fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit
 
 //object Build : BuildType({
 class Build(val os: String, val jdk: String) : BuildType({
-    //id("Build_${os}_${jdk}".toExtId())
-    id("Build_${os}_${jdk}")
+    id("Build_${os}_${jdk}".toExtId())
     name = "Build ($os, $jdk)"
 
     vcs {
