@@ -1,11 +1,11 @@
 import jetbrains.buildServer.configs.kotlin.v10.toExtId
-import jetbrains.buildServer.configs.kotlin.v2018_2.*
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.Swabra
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildFeatures.swabra
-import jetbrains.buildServer.configs.kotlin.v2018_2.buildSteps.maven
-import jetbrains.buildServer.configs.kotlin.v2018_2.triggers.vcs
-import jetbrains.buildServer.configs.kotlin.v2018_2.vcs.GitVcsRoot
-import jetbrains.buildServer.configs.kotlin.v2018_2.project
+import jetbrains.buildServer.configs.kotlin.v2019_2.*
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildFeatures.Swabra
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildFeatures.swabra
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.maven
+import jetbrains.buildServer.configs.kotlin.v2019_2.triggers.vcs
+import jetbrains.buildServer.configs.kotlin.v2019_2.vcs.GitVcsRoot
+import jetbrains.buildServer.configs.kotlin.v2019_2.project
 
 /*
 The settings script is an entry point for defining a TeamCity
@@ -29,18 +29,14 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 'Debug' option is available in the context menu for the task.
 */
 
-version = "2018.2"
+version = "2019.2"
 
-val operatingSystems = listOf("Mac OS X", "Windows", "Linux")
-val jdkVersions = listOf("JDK_18", "JDK_11")
+val projects = listOf("dogfood", "jrtest", "schutest")
+//val environments = listOf("qa", "sandbox", "production")
 
 project {
-    for (os in operatingSystems) {
-        for (jdk in jdkVersions) {
-            buildType(wrapWithFeature(Build(os, jdk)){
-                swabra {}
-            })
-        }
+    for (project in projects) {
+        subProject(CustomProject(project, environments))
     }
 }
 
@@ -53,8 +49,14 @@ project {
 //    subProject(TestProject)
 //}
 
-object TestProject : Project({
-    name = "TestSubProject"
+class CustomProject(val project: String, val environments: List<String>) : Project({
+    name = project;
+
+    for (environment in environments) {
+        buildType(wrapWithFeature(BuildSpire(environment)){
+            swabra {}
+        })
+    }
 })
 
 fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit): BuildType {
@@ -65,9 +67,9 @@ fun wrapWithFeature(buildType: BuildType, featureBlock: BuildFeatures.() -> Unit
 }
 
 //object Build : BuildType({
-class Build(val os: String, val jdk: String) : BuildType({
-    id("Build_${os}_${jdk}".toExtId())
-    name = "Build ($os, $jdk)"
+class BuildSpire(val environment: String) : BuildType({
+    id("Build_Spire_${environment}".toExtId())
+    name = "Build Spire ($environment)"
 
     vcs {
         root(DslContext.settingsRoot)
